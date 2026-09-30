@@ -6,6 +6,9 @@ const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
 
 const authRoutes = require('./routes/authRoutes');
+const itemRoutes = require('./routes/itemRoutes');
+const customRoutes = require('./routes/customRoutes');
+const rentalRoutes = require('./routes/rentalRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const ApiError = require('./utils/apiError');
 
@@ -54,6 +57,15 @@ app.get('/api/', (req, res) => {
       auth: {
         basePath: '/api/auth',
       },
+      items: {
+        basePath: '/api/items',
+      },
+      customs: {
+        basePath: '/api/customs',
+      },
+      rentals: {
+        basePath: '/api/rentals',
+      },
     },
   });
 });
@@ -68,6 +80,15 @@ app.get('/api/health', (req, res) => {
 
 // Auth
 app.use('/api/auth', authRoutes);
+
+// Items (rental inventory)
+app.use('/api/items', itemRoutes);
+
+// Customs (custom requirements/orders)
+app.use('/api/customs', customRoutes);
+
+// Rentals (bookings)
+app.use('/api/rentals', rentalRoutes);
 
 // 404
 app.use((req, res, next) => {
