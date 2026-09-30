@@ -1,0 +1,582 @@
+{
+"info": {
+"name": "Shuttering Rental API",
+"description": "Postman collection for the Shuttering Rental backend (auth, items, customs, rentals). Import and set the baseUrl variable (default: http://localhost:5000). Auth flow: Signup -> Verify OTP -> Login issues tokens; access token is saved automatically to the accessToken variable.",
+"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+"_postman_id": "8f4c2a1e-7b3d-4c65-9a11-2f6e8d0c3b77"
+},
+"variable": [
+{ "key": "baseUrl", "value": "http://localhost:5000", "type": "string" },
+{ "key": "phone", "value": "9876543210", "type": "string" },
+{ "key": "password", "value": "Test@1234", "type": "string" },
+{ "key": "accessToken", "value": "", "type": "string" },
+{ "key": "itemId", "value": "", "type": "string" },
+{ "key": "customId", "value": "", "type": "string" },
+{ "key": "rentalId", "value": "", "type": "string" }
+],
+"auth": {
+"type": "bearer",
+"bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+},
+"item": [
+{
+"name": "General",
+"item": [
+{
+"name": "Root",
+"request": {
+"method": "GET",
+"header": [],
+"url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] },
+"description": "Sanity check - API is running."
+},
+"response": []
+},
+{
+"name": "API Info",
+"request": {
+"method": "GET",
+"header": [],
+"url": { "raw": "{{baseUrl}}/api/", "host": ["{{baseUrl}}"], "path": ["api", ""] }
+},
+"response": []
+},
+{
+"name": "Health Check",
+"event": [
+{
+"listen": "test",
+"script": {
+"exec": [
+"pm.test('Status code is 200', function () {",
+" pm.response.to.have.status(200);",
+"});",
+"pm.test('Response is successful', function () {",
+" const json = pm.response.json();",
+" pm.expect(json.success).to.eql(true);",
+"});"
+],
+"type": "text/javascript"
+}
+}
+],
+"request": {
+"method": "GET",
+"header": [],
+"url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] }
+},
+"response": []
+}
+]
+},
+{
+"name": "Auth",
+"item": [
+{
+"name": "Signup",
+"event": [
+{
+"listen": "test",
+"script": {
+"exec": [
+"pm.test('Status code is 201', function () {",
+" pm.response.to.have.status(201);",
+"});",
+"// In development the API may return the OTP in the response body.",
+"const json = pm.response.json();",
+"if (json.data && json.data.otp) {",
+" pm.environment.set('lastOtp', json.data.otp);",
+" pm.collectionVariables.set('lastOtp', json.data.otp);",
+"}"
+],
+"type": "text/javascript"
+}
+}
+],
+"request": {
+"auth": { "type": "noauth" },
+"method": "POST",
+"header": [{ "key": "Content-Type", "value": "application/json" }],
+"body": {
+"mode": "raw",
+"raw": "{\n "name": "Test User",\n "phone": "{{phone}}",\n "password": "{{password}}",\n "confirmPassword": "{{password}}"\n}",
+"options": { "raw": { "language": "json" } }
+},
+"url": { "raw": "{{baseUrl}}/api/auth/signup", "host": ["{{baseUrl}}"], "path": ["api", "auth", "signup"] },
+"description": "Register a new user. An OTP is sent to the phone; the account cannot log in until /verify-otp succeeds. Password must be strong (min 8 chars, upper, lower, number, special)."
+},
+"response": []
+},
+{
+"name": "Verify OTP",
+"event": [
+{
+"listen": "test",
+"script": {
+"exec": [
+"pm.test('Status code is 200', function () {",
+" pm.response.to.have.status(200);",
+"});",
+"const json = pm.response.json();",
+"if (json.data && json.data.accessToken) {",
+" pm.collectionVariables.set('accessToken', json.data.accessToken);",
+" pm.environment.set('accessToken', json.data.accessToken);",
+"}"
+],
+"type": "text/javascript"
+}
+}
+],
+"request": {
+"auth": { "type": "noauth" },
+"method": "POST",
+"header": [{ "key": "Content-Type", "value": "application/json" }],
+"body": {
+"mode": "raw",
+"raw": "{\n "phone": "{{phone}}",\n "otp": "123456"\n}",
+"options": { "raw": { "language": "json" } }
+},
+"url": { "raw": "{{baseUrl}}/api/auth/verify-otp", "host": ["{{baseUrl}}"], "path": ["api", "auth", "verify-otp"] },
+"description": "Verify the OTP sent at signup. On success the phone is marked verified and tokens are issued (access token saved to {{accessToken}})."
+},
+"response": []
+},
+{
+"name": "Resend OTP",
+"request": {
+"auth": { "type": "noauth" },
+"method": "POST",
+"header": [{ "key": "Content-Type", "value": "application/json" }],
+"body": {
+"mode": "raw",
+"raw": "{\n "phone": "{{phone}}"\n}",
+"options": { "raw": { "language": "json" } }
+},
+"url": { "raw": "{{baseUrl}}/api/auth/resend-otp", "host": ["{{baseUrl}}"], "path": ["api", "auth", "resend-otp"] },
+"description": "Request a new OTP for an unverified account."
+},
+"response": []
+},
+{
+"name": "Login",
+"event": [
+{
+"listen": "test",
+"script": {
+"exec": [
+"pm.test('Status code is 200', function () {",
+" pm.response.to.have.status(200);",
+"});",
+"const json = pm.response.json();",
+"if (json.data && json.data.accessToken) {",
+" pm.collectionVariables.set('accessToken', json.data.accessToken);",
+" pm.environment.set('accessToken', json.data.accessToken);",
+"}"
+],
+"type": "text/javascript"
+}
+}
+],
+"request": {
+"auth": { "type": "noauth" },
+"method": "POST",
+"header": [{ "key": "Content-Type", "value": "application/json" }],
+"body": {
+"mode": "raw",
+"raw": "{\n "phone": "{{phone}}",\n "password": "{{password}}",\n "rememberMe": false\n}",
+"options": { "raw": { "language": "json" } }
+},
+"url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+"description": "Authenticate and issue tokens. The refresh token is set as an httpOnly cookie named refreshToken. Saves the access token to {{accessToken}}."
+},
+"response": []
+},
+{
+"name": "Refresh Token",
+"event": [
+{
+"listen": "test",
+"script": {
+"exec": [
+"const json = pm.response.json();",
+"if (json.data && json.data.accessToken) {",
+" pm.collectionVariables.set('accessToken', json.data.accessToken);",
+" pm.environment.set('accessToken', json.data.accessToken);",
+"}"
+],
+"type": "text/javascript"
+}
+}
+],
+"request": {
+"auth": { "type": "noauth" },
+"method": "POST",
+"header": [],
+"url": { "raw": "{{baseUrl}}/api/auth/refresh-token", "host": ["{{baseUrl}}"], "path": ["api", "auth", "refresh-token"] },
+"description": "Exchange the refreshToken cookie (sent automatically by Postman after login) for a new access token."
+},
+"response": []
+},
+{
+"name": "Get Me",
+"request": {
+"method": "GET",
+"header": [],
+"url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] },
+"description": "Get the currently authenticated user's profile. Requires Authorization: Bearer {{accessToken}}."
+},
+"response": []
+},
+{
+"name": "Logout",
+"event": [
+{
+"listen": "test",
+"script": {
+"exec": [
+"pm.collectionVariables.set('accessToken', '');",
+"pm.environment.set('accessToken', '');"
+],
+"type": "text/javascript"
+}
+}
+],
+"request": {
+"method": "POST",
+"header": [],
+"url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout"] },
+"description": "Clear the refresh-token cookie and log out."
+},
+"response": []
+}
+]
+},
+{
+"name": "Items",
+"item": [
+{
+"name": "Create Item",
+"event": [
+{
+"listen": "test",
+"script": {
+"exec": [
+"pm.test('Status code is 201', function () {",
+" pm.response.to.have.status(201);",
+"});",
+"const json = pm.response.json();",
+"if (json.data && json.data._id) {",
+" pm.collectionVariables.set('itemId', json.data._id);",
+" pm.environment.set('itemId', json.data._id);",
+"}"
+],
+"type": "text/javascript"
+}
+}
+],
+"request": {
+"method": "POST",
+"header": [{ "key": "Content-Type", "value": "application/json" }],
+"body": {
+"mode": "raw",
+"raw": "{\n "name": "Plywood Sheet 18mm",\n "description": "Marine plywood shuttering sheet",\n "category": "plywood",\n "unit": "pcs",\n "totalQuantity": 100,\n "availableQuantity": 100,\n "dailyRent": 15,\n "securityDeposit": 500,\n "images": []\n}",
+"options": { "raw": { "language": "json" } }
+},
+"url": { "raw": "{{baseUrl}}/api/items", "host": ["{{baseUrl}}"], "path": ["api", "items"] },
+"description": "Add a rental inventory item. category: plywood|beam|column|slab|general. unit: pcs|sqft|running_m|set|bundle. Saves the new id to {{itemId}}."
+},
+"response": []
+},
+{
+"name": "List Items",
+"event": [
+{
+"listen": "test",
+"script": {
+"exec": [
+"pm.test('Status code is 200', function () {",
+" pm.response.to.have.status(200);",
+"});"
+],
+"type": "text/javascript"
+}
+}
+],
+"request": {
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{baseUrl}}/api/items?page=1&limit=10&category=&search=",
+"host": ["{{baseUrl}}"],
+"path": ["api", "items"],
+"query": [
+{ "key": "page", "value": "1" },
+{ "key": "limit", "value": "10" },
+{ "key": "category", "value": "", "disabled": true, "description": "plywood | beam | column | slab | general" },
+{ "key": "search", "value": "", "disabled": true }
+]
+}
+},
+"response": []
+},
+{
+"name": "Get Item By ID",
+"request": {
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{baseUrl}}/api/items/{{itemId}}",
+"host": ["{{baseUrl}}"],
+"path": ["api", "items", "{{itemId}}"]
+}
+},
+"response": []
+},
+{
+"name": "Update Item",
+"request": {
+"method": "PUT",
+"header": [{ "key": "Content-Type", "value": "application/json" }],
+"body": {
+"mode": "raw",
+"raw": "{\n "dailyRent": 18,\n "availableQuantity": 95,\n "isActive": true\n}",
+"options": { "raw": { "language": "json" } }
+},
+"url": {
+"raw": "{{baseUrl}}/api/items/{{itemId}}",
+"host": ["{{baseUrl}}"],
+"path": ["api", "items", "{{itemId}}"]
+}
+},
+"response": []
+},
+{
+"name": "Delete Item",
+"request": {
+"method": "DELETE",
+"header": [],
+"url": {
+"raw": "{{baseUrl}}/api/items/{{itemId}}",
+"host": ["{{baseUrl}}"],
+"path": ["api", "items", "{{itemId}}"]
+}
+},
+"response": []
+}
+]
+},
+{
+"name": "Customs",
+"item": [
+{
+"name": "Create Custom Requirement",
+"event": [
+{
+"listen": "test",
+"script": {
+"exec": [
+"pm.test('Status code is 201', function () {",
+" pm.response.to.have.status(201);",
+"});",
+"const json = pm.response.json();",
+"if (json.data && json.data._id) {",
+" pm.collectionVariables.set('customId', json.data._id);",
+" pm.environment.set('customId', json.data._id);",
+"}"
+],
+"type": "text/javascript"
+}
+}
+],
+"request": {
+"method": "POST",
+"header": [{ "key": "Content-Type", "value": "application/json" }],
+"body": {
+"mode": "raw",
+"raw": "{\n "title": "Slab shuttering for 2nd floor",\n "description": "Need 800 sqft of slab shuttering panels for a residential project",\n "siteLocation": {\n "address": "MG Road Construction Site",\n "city": "Pune",\n "state": "Maharashtra",\n "pincode": "411001"\n },\n "itemsNeeded": [\n {\n "item": "{{itemId}}",\n "quantity": 40\n }\n ],\n "startDate": "2026-10-10",\n "durationDays": 30,\n "budget": 50000,\n "contactPhone": "9876543210"\n}",
+"options": { "raw": { "language": "json" } }
+},
+"url": { "raw": "{{baseUrl}}/api/customs", "host": ["{{baseUrl}}"], "path": ["api", "customs"] },
+"description": "Create a custom requirement/order. Saves the new id to {{customId}}."
+},
+"response": []
+},
+{
+"name": "List Customs",
+"request": {
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{baseUrl}}/api/customs?page=1&limit=10",
+"host": ["{{baseUrl}}"],
+"path": ["api", "customs"],
+"query": [
+{ "key": "page", "value": "1" },
+{ "key": "limit", "value": "10" },
+{ "key": "status", "value": "", "disabled": true, "description": "open | matched | fulfilled | cancelled" },
+{ "key": "city", "value": "", "disabled": true }
+]
+}
+},
+"response": []
+},
+{
+"name": "Get Custom By ID",
+"request": {
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{baseUrl}}/api/customs/{{customId}}",
+"host": ["{{baseUrl}}"],
+"path": ["api", "customs", "{{customId}}"]
+}
+},
+"response": []
+},
+{
+"name": "Update Custom",
+"request": {
+"method": "PUT",
+"header": [{ "key": "Content-Type", "value": "application/json" }],
+"body": {
+"mode": "raw",
+"raw": "{\n "durationDays": 45,\n "budget": 60000,\n "status": "matched"\n}",
+"options": { "raw": { "language": "json" } }
+},
+"url": {
+"raw": "{{baseUrl}}/api/customs/{{customId}}",
+"host": ["{{baseUrl}}"],
+"path": ["api", "customs", "{{customId}}"]
+},
+"description": "Update fields on a custom requirement. status: open | matched | fulfilled | cancelled."
+},
+"response": []
+},
+{
+"name": "Cancel Custom",
+"request": {
+"method": "DELETE",
+"header": [],
+"url": {
+"raw": "{{baseUrl}}/api/customs/{{customId}}",
+"host": ["{{baseUrl}}"],
+"path": ["api", "customs", "{{customId}}"]
+},
+"description": "Cancel a custom requirement."
+},
+"response": []
+}
+]
+},
+{
+"name": "Rentals",
+"item": [
+{
+"name": "Create Rental",
+"event": [
+{
+"listen": "test",
+"script": {
+"exec": [
+"pm.test('Status code is 201', function () {",
+" pm.response.to.have.status(201);",
+"});",
+"const json = pm.response.json();",
+"if (json.data) {",
+" const id = json.data._id || (json.data.rental && json.data.rental._id);",
+" if (id) {",
+" pm.collectionVariables.set('rentalId', id);",
+" pm.environment.set('rentalId', id);",
+" }",
+"}"
+],
+"type": "text/javascript"
+}
+}
+],
+"request": {
+"method": "POST",
+"header": [{ "key": "Content-Type", "value": "application/json" }],
+"body": {
+"mode": "raw",
+"raw": "{\n "item": "{{itemId}}",\n "custom": null,\n "quantity": 20,\n "startDate": "2026-10-10",\n "endDate": "2026-11-10",\n "dailyRent": 15,\n "deliveryCharges": 500,\n "notes": "Deliver to MG Road site"\n}",
+"options": { "raw": { "language": "json" } }
+},
+"url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] },
+"description": "Book a rental against an item (optionally linked to a custom via {{customId}}). endDate must be after startDate. Saves the new id to {{rentalId}}."
+},
+"response": []
+},
+{
+"name": "List Rentals",
+"request": {
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{baseUrl}}/api/rentals?page=1&limit=10",
+"host": ["{{baseUrl}}"],
+"path": ["api", "rentals"],
+"query": [
+{ "key": "page", "value": "1" },
+{ "key": "limit", "value": "10" },
+{ "key": "status", "value": "", "disabled": true, "description": "pending | confirmed | ongoing | completed | cancelled" }
+]
+}
+},
+"response": []
+},
+{
+"name": "Get Rental By ID",
+"request": {
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{baseUrl}}/api/rentals/{{rentalId}}",
+"host": ["{{baseUrl}}"],
+"path": ["api", "rentals", "{{rentalId}}"]
+}
+},
+"response": []
+},
+{
+"name": "Update Rental Status",
+"request": {
+"method": "PATCH",
+"header": [{ "key": "Content-Type", "value": "application/json" }],
+"body": {
+"mode": "raw",
+"raw": "{\n "status": "confirmed",\n "returnDate": "2026-11-10",\n "actualReturnDate": null\n}",
+"options": { "raw": { "language": "json" } }
+},
+"url": {
+"raw": "{{baseUrl}}/api/rentals/{{rentalId}}/status",
+"host": ["{{baseUrl}}"],
+"path": ["api", "rentals", "{{rentalId}}", "status"]
+},
+"description": "Move a rental through its lifecycle. status: pending | confirmed | ongoing | completed | cancelled."
+},
+"response": []
+},
+{
+"name": "Record Rental Payment",
+"request": {
+"method": "POST",
+"header": [{ "key": "Content-Type", "value": "application/json" }],
+"body": {
+"mode": "raw",
+"raw": "{\n "amount": 5000,\n "method": "upi"\n}",
+"options": { "raw": { "language": "json" } }
+},
+"url": {
+"raw": "{{baseUrl}}/api/rentals/{{rentalId}}/payment",
+"host": ["{{baseUrl}}"],
+"path": ["api", "rentals", "{{rentalId}}", "payment"]
+},
+"description": "Record a payment against a rental. method: cash | upi | card | bank_transfer."
+},
+"response": []
+}
+]
+}
+]
+}
