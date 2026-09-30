@@ -171,9 +171,13 @@ const updateRentalStatus = async (req, res, next) => {
       throw new ApiError(403, 'Only the item owner can change the rental status');
     }
 
-    const { status } = req.body;
+    const { status, returnDate, actualReturnDate } = req.body;
     const previousStatus = rental.status;
     rental.status = status;
+    if (returnDate) rental.returnDate = returnDate;
+    if (status === 'completed' && !rental.actualReturnDate) {
+      rental.actualReturnDate = actualReturnDate || new Date();
+    }
     await rental.save({ validateBeforeSave: false });
 
     // Return stock when a live booking ends without having been completed before
@@ -192,9 +196,54 @@ const updateRentalStatus = async (req, res, next) => {
   }
 };
 
+// Record a payment against a rental (supports the app's "Final Bill / Payment" screen)
+const recordRentalPayment = async (req, res, next) => {
+  try {
+    const rental = await Rental.findById(req.params.id);
+    if (!rental) throw new ApiError(404, 'Rental not found');
+
+    if (
+      req.user.role !== 'admin' &&
+      rental.owner?.toString() !== req.user._id.toString()
+    ) {
+      throw new ApiError(403, 'Only the item owner can record payments');
+    }
+
+    if (rental.paymentStatus === 'paid') {
+      throw new ApiError(400, 'This rental is already fully paid');
+    }
+
+    const { amount, method } = req.body;
+    const payable =
+      (rental.totalRent || 0) +
+      (rental.securityDeposit || 0) +
+      (rental.deliveryCharges || 0);
+
+    if (amount > payable - (rental.amountPaid || 0)) {
+      throw new ApiError(
+        400,
+        `Amount exceeds the outstanding balance of ${payable - (rental.amountPaid || 0)}`
+      );
+    }
+
+    rental.amountPaid = (rental.amountPaid || 0) + amount;
+    rental.paymentMethod = method || rental.paymentMethod;
+    rental.paymentStatus = rental.amountPaid >= payable ? 'paid' : 'partial';
+    await rental.save({ validateBeforeSave: false });
+
+    return sendSuccess(res, 200, 'Payment recorded successfully', {
+      rental,
+      balanceDue: Math.max(payable - rental.amountPaid, 0),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createRental,
   getRentals,
   getRentalById,
   updateRentalStatus,
+  recordRentalPayment,
 };

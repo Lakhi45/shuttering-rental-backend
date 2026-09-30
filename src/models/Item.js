@@ -16,7 +16,7 @@ const itemSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      trim: true,
+      enum: ['plywood', 'beam', 'column', 'slab', 'general'],
       default: 'general',
     },
     unit: {

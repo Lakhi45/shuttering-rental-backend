@@ -4,10 +4,12 @@ const {
   getRentals,
   getRentalById,
   updateRentalStatus,
+  recordRentalPayment,
 } = require('../controllers/rentalController');
 const {
   validateCreateRental,
   validateUpdateRentalStatus,
+  validateRentalPayment,
   validateGetRentals,
   validateRentalId,
 } = require('../validators/rentalValidators');
@@ -31,6 +33,13 @@ router.patch(
   validateUpdateRentalStatus,
   handleValidationErrors,
   updateRentalStatus
+);
+
+router.post(
+  '/:id/payment',
+  validateRentalPayment,
+  handleValidationErrors,
+  recordRentalPayment
 );
 
 module.exports = router;

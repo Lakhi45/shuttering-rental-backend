@@ -48,6 +48,29 @@ const rentalSchema = new mongoose.Schema(
       enum: ['pending', 'confirmed', 'ongoing', 'completed', 'cancelled'],
       default: 'pending',
     },
+    returnDate: {
+      type: Date,
+      default: null,
+    },
+    actualReturnDate: {
+      type: Date,
+      default: null,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['unpaid', 'partial', 'paid'],
+      default: 'unpaid',
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['cash', 'upi', 'card', 'bank_transfer'],
+      default: 'cash',
+    },
+    amountPaid: {
+      type: Number,
+      min: [0, 'Amount paid cannot be negative'],
+      default: 0,
+    },
     rentedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

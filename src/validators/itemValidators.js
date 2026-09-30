@@ -11,7 +11,7 @@ const validateCreateItem = [
     .isLength({ max: 100 })
     .withMessage('Item name must be under 100 characters'),
   body('description').optional({ values: 'falsy' }).trim().isLength({ max: 500 }),
-  body('category').optional({ values: 'falsy' }).trim(),
+  body('category').optional({ values: 'falsy' }).isIn(['plywood', 'beam', 'column', 'slab', 'general']).withMessage('Invalid category'),
   body('unit')
     .optional()
     .isIn(['pcs', 'sqft', 'running_m', 'set', 'bundle'])
@@ -48,7 +48,7 @@ const validateUpdateItem = [
 const validateGetItems = [
   query('page').optional().isInt({ min: 1 }).toInt(),
   query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
-  query('category').optional().trim(),
+  query('category').optional().isIn(['plywood', 'beam', 'column', 'slab', 'general']),
   query('search').optional().trim(),
 ];
 

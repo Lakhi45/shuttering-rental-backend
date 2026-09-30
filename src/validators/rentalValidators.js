@@ -51,6 +51,19 @@ const validateUpdateRentalStatus = [
     .withMessage(
       'Status must be one of: pending, confirmed, ongoing, completed, cancelled'
     ),
+  body('returnDate').optional({ values: 'null' }).isISO8601().withMessage('Return date must be a valid ISO date'),
+  body('actualReturnDate').optional({ values: 'null' }).isISO8601().withMessage('Actual return date must be a valid ISO date'),
+];
+
+const validateRentalPayment = [
+  param('id').custom(isObjectId).withMessage('Invalid rental id'),
+  body('amount')
+    .isFloat({ gt: 0 })
+    .withMessage('Payment amount must be a positive number'),
+  body('method')
+    .optional({ values: 'falsy' })
+    .isIn(['cash', 'upi', 'card', 'bank_transfer'])
+    .withMessage('Invalid payment method'),
 ];
 
 const validateGetRentals = [
@@ -70,6 +83,7 @@ const validateRentalId = [param('id').custom(isObjectId).withMessage('Invalid re
 module.exports = {
   validateCreateRental,
   validateUpdateRentalStatus,
+  validateRentalPayment,
   validateGetRentals,
   validateRentalId,
 };
